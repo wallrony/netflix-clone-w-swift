@@ -7,10 +7,15 @@
 
 import UIKit
 
-class MovieCollectionViewTableViewCell: UITableViewCell {
+protocol ParentViewController: AnyObject {
+    func didTapItem(title: Title)
+}
+
+class TitleCollectionViewTableViewCell: UITableViewCell {
     static let identifier: String = "MovieCollectionViewTableViewCell"
+    weak var delegate: ParentViewController?
     
-    private var movies = [Movie]()
+    private var titles = [Title]()
     
     private let loadingView = UIView()
     private let collectionView: UICollectionView = {
@@ -18,7 +23,7 @@ class MovieCollectionViewTableViewCell: UITableViewCell {
         layout.itemSize = CGSize(width: 140, height: 200)
         layout.scrollDirection = .horizontal
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.register(MovieCollectionViewCell.self, forCellWithReuseIdentifier: MovieCollectionViewCell.identifier)
+        collectionView.register(TitleCollectionViewCell.self, forCellWithReuseIdentifier: TitleCollectionViewCell.identifier)
         return collectionView
     }()
     
@@ -50,8 +55,8 @@ class MovieCollectionViewTableViewCell: UITableViewCell {
         ])
     }
     
-    func configureSection(movies: [Movie]) {
-        self.movies = movies
+    func configure(with titles: [Title]) {
+        self.titles = titles
         loadingView.removeFromSuperview()
         if collectionView.isDescendant(of: contentView) {
             DispatchQueue.main.async { [weak self] in
@@ -67,18 +72,50 @@ class MovieCollectionViewTableViewCell: UITableViewCell {
         indicator.startAnimating()
         return indicator
     }
+    
+    private func download(indexPath: IndexPath) {
+        let title = self.titles[indexPath.row]
+        CacheManager.shared.saveTitle(title, completion: { result in
+            switch (result) {
+            case .success(()):
+                print("Title \(title.name) downloaded")
+                break
+            case .failure(let error):
+                print(error.message)
+                break
+            }
+        })
+    }
 }
 
-extension MovieCollectionViewTableViewCell: UICollectionViewDelegate, UICollectionViewDataSource {
+extension TitleCollectionViewTableViewCell: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCollectionViewCell.identifier, for: indexPath) as? MovieCollectionViewCell else {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TitleCollectionViewCell.identifier, for: indexPath) as? TitleCollectionViewCell else {
             return UICollectionViewCell()
         }
-        cell.configure(with: self.movies[indexPath.row].posterPath)
+        cell.configure(with: self.titles[indexPath.row].posterPath)
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.movies.count
+        return self.titles.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let config = UIContextMenuConfiguration(
+            identifier: nil,
+            previewProvider: nil
+        ) { [weak self] _ in
+            let downloadAction = UIAction(title: "Download", subtitle: nil, image: nil, identifier: nil, discoverabilityTitle: nil, state: .off) { _ in
+                self?.download(indexPath: indexPath)
+            }
+            return UIMenu(title: "Actions", image: nil, children: [downloadAction])
+        }
+        return config
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let title = self.titles[indexPath.row]
+        self.delegate?.didTapItem(title: title)
     }
 }

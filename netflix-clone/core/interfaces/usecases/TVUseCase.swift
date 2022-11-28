@@ -7,11 +7,10 @@
 
 import Foundation
 
-protocol TrendingUseCase {
-    var adapter: TrendingAdapter { get }
+protocol TVUseCase {
+    var adapter: TVAdapter { get }
     
-    init(adapter: TrendingAdapter);
+    init(adapter: TVAdapter);
     
-    func fetchMovies() async throws -> [Movie]
-    func fetchTvs() async throws -> [TV]
+    func fetchTrending() async throws -> [TV]
 }

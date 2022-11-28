@@ -6,9 +6,12 @@
 //
 
 import UIKit
+import Combine
 
-class HomeViewController: UIViewController {
+class HomeViewController: UIViewController, ParentViewController {
     private let viewModel: TitleViewModel
+    private var headerView: HeroHeaderUIView?
+    private var subscriptions = [AnyCancellable]()
     
     let sections = [
         TitleSection.Movie("trending movies", classification: MovieClassification.Trending),
@@ -41,6 +44,22 @@ class HomeViewController: UIViewController {
         fatalError()
     }
     
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        view.addSubview(homeFeedTable)
+        
+        headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 475))
+        headerView?.delegate = self
+        
+        homeFeedTable.delegate = self
+        homeFeedTable.dataSource = self
+        homeFeedTable.tableHeaderView = headerView
+        
+        configureNavBar()
+        configureHeaderView()
+    }
+    
     private func configureNavBar() {
         let image = UIImage(named: "netflixLogo")?.withRenderingMode(.alwaysOriginal)
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: image, style: .done, target: self, action: nil)
@@ -48,22 +67,7 @@ class HomeViewController: UIViewController {
             UIBarButtonItem(image: UIImage(systemName: "person"), style: .done, target: self, action: nil),
             UIBarButtonItem(image: UIImage(systemName: "play.rectangle"), style: .done, target: self, action: nil)
         ]
-        print(UIColor.systemBackground.accessibilityName)
         navigationController?.navigationBar.tintColor = .systemBackground == UIColor.white ? UIColor.black : UIColor.white
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        view.addSubview(homeFeedTable)
-        
-        let headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 475))
-        
-        homeFeedTable.delegate = self
-        homeFeedTable.dataSource = self
-        homeFeedTable.tableHeaderView = headerView
-        
-        configureNavBar()
     }
     
     override func viewDidLayoutSubviews() {
@@ -76,6 +80,24 @@ class HomeViewController: UIViewController {
         let offset = scrollView.contentOffset.y + defaultOffset
         
         navigationController?.navigationBar.transform = .init(translationX: 0, y: min(0, -offset))
+    }
+    
+    func configureHeaderView() {
+        self.viewModel.trendingMoviesPublisher.sink(receiveValue: { [weak self] movies in
+            if movies != nil {
+                guard let movie = movies!.randomElement() else {
+                    return
+                }
+                self?.headerView?.configure(with: Title.Movie(movie))
+            }
+        }).store(in: &subscriptions)
+    }
+    
+    func didTapItem(title: Title) {
+        let vc = TitleDetailsViewController()
+        vc.configure(with: title)
+        navigationController?.pushViewController(vc, animated: true)
+        navigationController?.navigationBar.transform = .init(translationX: 0, y: 0)
     }
 }
 
@@ -100,6 +122,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TitleCollectionViewTableViewCell.identifier, for: indexPath) as? TitleCollectionViewTableViewCell else {
             return UITableViewCell()
         }
+        cell.delegate = self
         return self.viewModel.fillTableViewCellSection(section: section, cell: cell)
     }
     

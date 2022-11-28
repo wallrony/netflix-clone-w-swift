@@ -8,13 +8,13 @@
 import UIKit
 import Combine
 
-class UpcomingViewController: UIViewController {
+class UpcomingViewController: UIViewController, ParentViewController {
     private var subscriptions = [AnyCancellable]()
     private let viewModel: TitleViewModel
     private var titles = [Title]()
     
     private let loadingView = UIView()
-    private let upcomingTable: UITableView = {
+    private let dataTable: UITableView = {
         let table = UITableView()
         table.register(TitleTableViewCell.self, forCellReuseIdentifier: TitleTableViewCell.identifier)
         return table
@@ -46,25 +46,33 @@ class UpcomingViewController: UIViewController {
         navigationController?.navigationItem.largeTitleDisplayMode = .always
         
         view.addSubview(loadingView)
-        upcomingTable.delegate = self
-        upcomingTable.dataSource = self
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        upcomingTable.frame = view.frame
-        loadingView.frame = view.frame
+        dataTable.delegate = self
+        dataTable.dataSource = self
+        
         viewModel.upcomingMoviesPublisher.sink(receiveValue: {[weak self] movies in
             if movies != nil {
                 self?.titles = movies!.map(Title.Movie)
                 DispatchQueue.main.async {
-                    self?.loadingView.removeFromSuperview()
-                    self?.view.addSubview(self?.upcomingTable ?? UIView())
+                    guard self != nil else { return }
+                    if self!.loadingView.isDescendant(of: self!.view) {
+                        self?.loadingView.removeFromSuperview()
+                    }
+                    if !self!.dataTable.isDescendant(of: self!.view) {
+                        self?.view.addSubview(self?.dataTable ?? UIView())
+                    } else {
+                        self?.dataTable.reloadData()
+                    }
                 }
             } else {
                 self?.viewModel.fetchUpcomingMovies()
             }
         }).store(in: &subscriptions)
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        dataTable.frame = view.frame
+        loadingView.frame = view.frame
         
         let activityIndicator = self.loadingIndicator()
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
@@ -81,11 +89,17 @@ class UpcomingViewController: UIViewController {
         indicator.startAnimating()
         return indicator
     }
+    
+    func didTapItem(title: Title) {
+        let vc = TitleDetailsViewController()
+        vc.configure(with: title)
+        navigationController?.pushViewController(vc, animated: true)
+    }
 }
 
 extension UpcomingViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.viewModel.upcomingMovies?.count ?? 0
+        return self.titles.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -93,6 +107,7 @@ extension UpcomingViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         cell.configure(with: self.titles[indexPath.row])
+        cell.delegate = self
         return cell
     }
     

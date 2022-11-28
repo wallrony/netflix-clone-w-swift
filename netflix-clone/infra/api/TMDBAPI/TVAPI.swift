@@ -7,23 +7,13 @@
 
 import Foundation
 
-class TMDBAPI: BaseAPI, TrendingAdapter, UpcomingAdapter {
-    static let shared = TMDBAPI()
-    private let apiToken = ""
+class TVAPI: BaseTMDBAPI, TVAdapter {
+    static let shared = TVAPI()
     
-    required init() {
-        super.init(baseURL: )
-    }
-    
-    func fetchTrendingTvs() async throws -> [TV] {
-        let data = try await self.fetchTrending(mediaType: "tv")
+    func fetchTrending() async throws -> [TV] {
+        let request = self.prepareRequest(path: "/trending/tv/week")
+        let data = try await self.executeRequest(request: request)
         let result = try JSONDecoder().decode(TVPage.self, from: data)
         return result.tvs
-    }
-    
-    private func fetchTrending(mediaType: String) async throws -> Data {
-        let request = self.prepareRequest(path: "/trending/\(mediaType)/week")
-        let data = try await self.executeRequest(request: request)
-        return data;
     }
 }

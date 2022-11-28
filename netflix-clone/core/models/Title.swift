@@ -7,6 +7,46 @@
 
 import Foundation
 
+struct Title {
+    var id: Int
+    var name: String
+    var posterPath: String
+    var type: TitleType
+    var overview: String
+    var isAdult: Bool
+    
+    init(id: Int, name: String, posterPath: String, type: TitleType, overview: String, isAdult: Bool) {
+        self.id = id
+        self.name = name
+        self.posterPath = posterPath
+        self.type = type
+        self.overview = overview
+        self.isAdult = isAdult
+    }
+    
+    static func Movie(_ movie: Movie) -> Title {
+        return Title(
+            id: movie.id,
+            name: movie.title,
+            posterPath: movie.posterPath,
+            type: TitleType.Movie,
+            overview: movie.overview,
+            isAdult: movie.adult
+        )
+    }
+    
+    static func TV(_ tv: TV) -> Title {
+        return Title(
+            id: tv.id,
+            name: tv.name,
+            posterPath: tv.posterPath,
+            type: TitleType.TV,
+            overview: tv.overview,
+            isAdult: tv.adult
+        )
+    }
+}
+
 struct TitleSection {
     var type: TitleType
     var name: String
@@ -37,8 +77,10 @@ enum MovieClassification: Int {
     case Popular = 1
     case Upcoming = 2
     case TopRated = 3
+    case Discover = 4
 }
 
 enum TVClassification: Int {
-    case Trending = 4
+    case Trending = 5
 }
+

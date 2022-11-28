@@ -8,7 +8,6 @@
 import Foundation
 
 class BaseAPI {
-    private let apiKey = "71e0d98e22eda7a1e03cb4a913db3769"
     private let baseURL: String;
     
     init(baseURL: String) {
@@ -18,7 +17,7 @@ class BaseAPI {
     internal func prepareRequest(path: String, queryItems: [URLQueryItem] = []) -> URLRequest {
         var url = URL(string: self.baseURL)!
         url.append(path: path)
-        url.append(queryItems: [URLQueryItem(name: "api_key", value: self.apiKey)] + queryItems)
+        url.append(queryItems: queryItems)
         return URLRequest(url: url)
     }
 

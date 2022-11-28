@@ -7,10 +7,15 @@
 
 import Foundation
 
-protocol UpcomingUseCase {
-    var adapter: UpcomingAdapter { get }
+protocol MoviesUseCase {
+    var adapter: MoviesAdapter { get }
     
-    init(adapter: UpcomingAdapter)
+    init(adapter: MoviesAdapter)
     
-    func fetchMovies() async throws -> [Movie]
+    func fetchTrending() async throws -> [Movie]
+    func fetchUpcoming() async throws -> [Movie]
+    func fetchPopular() async throws -> [Movie]
+    func fetchTopRated() async throws -> [Movie]
+    func fetchDiscover() async throws -> [Movie]
+    func fetchSearch(with query: String) async throws -> [Movie]
 }

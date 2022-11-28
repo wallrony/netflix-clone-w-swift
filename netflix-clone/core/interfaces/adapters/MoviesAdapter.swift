@@ -6,3 +6,12 @@
 //
 
 import Foundation
+
+protocol MoviesAdapter {
+    func fetchTrending() async throws -> [Movie]
+    func fetchUpcoming() async throws -> [Movie]
+    func fetchPopular() async throws -> [Movie]
+    func fetchTopRated() async throws -> [Movie]
+    func fetchDiscover() async throws -> [Movie]
+    func fetchSearch(with query: String) async throws -> [Movie]
+}

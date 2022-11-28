@@ -7,7 +7,6 @@
 
 import Foundation
 
-protocol TrendingAdapter {
-    
-    func fetchTrendingTvs() async throws -> [TV]
+protocol TVAdapter {
+    func fetchTrending() async throws -> [TV]
 }
